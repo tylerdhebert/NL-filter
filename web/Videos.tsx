@@ -78,6 +78,12 @@ export function Videos({ params, set, mobile, sheet, closeSheet }: { params: URL
   const filterKey = [s.kinds.join(), s.game, s.person, s.category, s.day, q, s.watched, s.sort, s.from, s.to].join('|');
   const [shown, setShown] = useState(BATCH);
   useEffect(() => setShown(BATCH), [filterKey]);
+  // New filters mean a new list: start it from the top. Skipped on mount so switching views keeps its scroll position.
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    if (scrollY > 0) scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }, [filterKey]);
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinel.current; if (!el) return;
