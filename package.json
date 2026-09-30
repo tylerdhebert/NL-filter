@@ -1,0 +1,22 @@
+{
+  "name": "letourneauhub",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "crawl": "bun scripts/crawl.ts",
+    "build": "bun build web/main.tsx --outfile site/app.js --format iife --target browser --production",
+    "dev": "bun build web/main.tsx --outfile site/app.js --format iife --target browser --watch",
+    "check": "tsc --noEmit && bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "motion": "^13.4.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}

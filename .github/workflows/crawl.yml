@@ -1,0 +1,56 @@
+name: Crawl and deploy
+
+on:
+  schedule:
+    - cron: '17 13 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: crawl-and-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - name: Crawl
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: bun run crawl
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      - run: bun run build
+      - name: Save crawl data
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          git add data/ site/videos.js
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m "chore: daily crawl $(date -u +%F)"
+            git push origin HEAD:main
+          fi
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - uses: actions/deploy-pages@v5
+        id: deployment

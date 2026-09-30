@@ -1,0 +1,4 @@
+.env
+node_modules/
+site/app.js
+data/*.log
