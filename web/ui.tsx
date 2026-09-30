@@ -11,13 +11,13 @@ export function useMedia(query: string) {
 }
 
 // Close a floating layer on outside press, page scroll or resize.
-export function useDismiss(open: boolean, refs: RefObject<HTMLElement | null>[], close: () => void, ignore?: string) {
+export function useDismiss(open: boolean, refs: RefObject<HTMLElement | null>[], close: () => void, ignore?: string, closeOnScroll = true) {
   const latest = useRef(close); latest.current = close;
   useEffect(() => {
     if (!open) return;
     const inside = (t: EventTarget | null) => refs.some(r => r.current?.contains(t as Node)) || (!!ignore && t instanceof Element && !!t.closest(ignore));
     const press = (e: PointerEvent) => { if (!inside(e.target)) latest.current(); };
-    const scroll = (e: Event) => { if (!inside(e.target) && !inside(document.activeElement)) latest.current(); };
+    const scroll = (e: Event) => { if (closeOnScroll && !inside(e.target) && !inside(document.activeElement)) latest.current(); };
     const resize = () => latest.current();
     addEventListener('pointerdown', press); addEventListener('scroll', scroll, true); addEventListener('resize', resize);
     return () => { removeEventListener('pointerdown', press); removeEventListener('scroll', scroll, true); removeEventListener('resize', resize); };

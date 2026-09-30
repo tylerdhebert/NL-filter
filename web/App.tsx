@@ -53,13 +53,14 @@ export function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+
       <header className="bar gel">
         <a className="brand" href={href('videos')} aria-label="LetourneauHub — all videos"><span className="logo">LH</span><span className="wordmark"><b>LetourneauHub</b><span>Northernlion VOD archive</span></span></a>
         <LayoutGroup id="nav">
           <nav className="nav" aria-label="Pages">
             {PAGES.map(({ path: p, label }) => (
               <a key={p} href={href(p, new URLSearchParams(queryMemory[p] ?? ''))} aria-current={p === path ? 'page' : undefined}>
-                {p === path && <motion.span layoutId="nav-pill" className="nav-pill" transition={spring} />}
+                {p === path && <motion.span layoutId="nav-pill" layoutDependency={path} className="nav-pill" transition={spring} />}
                 <span className="nav-label">{label}</span>
               </a>
             ))}

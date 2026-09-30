@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useDragControls, type DragControls } from 'motion/react';
 import { plural, FIRST_DAY, CATEGORIES, KINDS, KIND_LABEL, compact, data as maybeData, date, duration, fmt, watchUrl, type Kind, type Video } from './data';
 import { setWatched, useWatched } from './watched';
@@ -78,11 +78,12 @@ export function Videos({ params, set, mobile, sheet, closeSheet }: { params: URL
   const filterKey = [s.kinds.join(), s.game, s.person, s.category, s.day, q, s.watched, s.sort, s.from, s.to].join('|');
   const [shown, setShown] = useState(BATCH);
   useEffect(() => setShown(BATCH), [filterKey]);
-  // New filters mean a new list: start it from the top. Skipped on mount so switching views keeps its scroll position.
+  // New filters mean a new list: jump to the top before it paints. A smooth scroll here gets cut short by the banner and
+  // card animations resizing the page. Skipped on mount so switching views keeps its scroll position.
   const mounted = useRef(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
-    if (scrollY > 0) scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (scrollY > 0) scrollTo({ top: 0, behavior: 'instant' });
   }, [filterKey]);
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -125,7 +126,7 @@ export function Videos({ params, set, mobile, sheet, closeSheet }: { params: URL
           <div className="active-filters">
             <AnimatePresence mode="popLayout" initial={false}>
               {chips.map(([key, label]) => (
-                <motion.button key={key} type="button" layout aria-label={`Clear ${key === 'person' ? 'co-streamer' : key === 'range' ? 'date' : key} filter: ${label}`}
+                <motion.button key={key} type="button" aria-label={`Clear ${key === 'person' ? 'co-streamer' : key === 'range' ? 'date' : key} filter: ${label}`}
                   initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={jelly}
                   onClick={() => set(key === 'range' ? { from: '', to: '' } : { [key]: '' })}>{label} ×</motion.button>
               ))}
@@ -318,7 +319,8 @@ function DateRange({ from, to, stats, onRange }: { from: string; to: string; sta
   const btn = useRef<HTMLButtonElement>(null), pop = useRef<HTMLDivElement>(null);
   const place = usePlace(open, btn, pop, { prefer: 'right' });
   const close = (focus = false) => { setOpen(false); if (focus) btn.current?.focus(); };
-  useDismiss(open, [btn, pop], () => close(), '.dd-menu');
+  // Picking a start date changes the filters, which scrolls the page to the top; that must not close the picker.
+  useDismiss(open, [btn, pop], () => close(), '.dd-menu', false);
   const enabled = useMemo(() => new Set(stats.keys()), [stats]);
   const inRange = useMemo(() => {
     if (!from || !to) return null;
